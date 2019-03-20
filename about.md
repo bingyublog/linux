@@ -1,4 +1,8 @@
-# www.Symbo1.com
+---
+layout: page
+title: About
+permalink: /about/
+---
 
 * Symbo1 源于英文symbol即符号。
 
@@ -14,5 +18,13 @@
 
 > &nbsp;&nbsp;&nbsp;Happy hunting, and enjoy the acknowledgement apart from the reward. Never forget why you started, and your mission can be accomplished.
 
-2018.12.01
-Symbo1 Security Team.
+<div align="right">
+<table>
+  <tr>
+    <td align="center">2018.12.01&nbsp;<a href="/feed.xml" target="_blank">RSS</a></td>
+  </tr>
+  <tr>
+    <td align="right"><a href="mailto:root@symbo1.com" target="_blank">Symbo1 Security Team</a>.</td>
+  </tr>
+</table>
+</div>
